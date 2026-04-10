@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alışveriş Listesi - Paylaş ve Senkronize Et</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app" class="container">
+        <!-- Ana Sayfa -->
+        <section id="home-screen" class="screen active">
+            <header class="hero">
+                <h1>Alışveriş Listesi</h1>
+                <p>Listenizi oluşturun, sevdiklerinizle paylaşın ve markette senkronize kalın.</p>
+            </header>
+
+            <div class="actions">
+                <button id="btn-create-new" class="btn btn-primary btn-large">
+                    <span class="icon">➕</span> Yeni Liste Oluştur
+                </button>
+
+                <div class="divider"><span>veya</span></div>
+
+                <div class="join-area">
+                    <label for="join-code">Koda Göre Liste Aç</label>
+                    <div class="input-group">
+                        <input type="number" id="join-code" placeholder="6 haneli kod" maxlength="6" pattern="\d{6}">
+                        <button id="btn-join" class="btn btn-secondary">Aç</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="recent-lists-section" class="recent-lists hidden">
+                <h3>Son Erişilen Listeler</h3>
+                <div id="recent-lists-container" class="list-grid">
+                    <!-- localStorage'dan gelen listeler buraya -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Liste Oluşturma Sayfası -->
+        <section id="create-screen" class="screen">
+            <header class="header">
+                <button class="btn-back">← Geri</button>
+                <h2>Yeni Liste</h2>
+            </header>
+            <div class="form-group">
+                <label for="new-list-name">Liste Adı (Opsiyonel)</label>
+                <input type="text" id="new-list-name" placeholder="Örn: Haftalık Market" maxlength="30">
+                <button id="btn-submit-create" class="btn btn-primary btn-large">Oluştur</button>
+            </div>
+        </section>
+
+        <!-- Liste Detay Sayfası -->
+        <section id="detail-screen" class="screen">
+            <header class="detail-header">
+                <div class="header-top">
+                    <button class="btn-back">←</button>
+                    <h2 id="display-list-name">Yükleniyor...</h2>
+                    <button id="btn-share-list" class="btn-icon" title="Paylaş">📤</button>
+                </div>
+                <div class="code-badge">
+                    Kod: <span id="display-list-code">------</span>
+                    <button id="btn-copy-code" class="btn-mini">Kopyala</button>
+                </div>
+            </header>
+
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="active-items">Alınacaklar</button>
+                <button class="tab-btn" data-tab="history">Geçmiş</button>
+            </div>
+
+            <div id="active-items-tab" class="tab-content active">
+                <div class="add-item-area">
+                    <div class="input-row">
+                        <input type="text" id="item-name" placeholder="Ürün adı...">
+                        <input type="text" id="item-qty" placeholder="Miktar (opsiyonel)" class="qty-input">
+                        <button id="btn-add-item" class="btn btn-primary">Ekle</button>
+                    </div>
+                </div>
+
+                <ul id="active-items-list" class="item-list">
+                    <!-- Aktif ürünler buraya -->
+                </ul>
+                
+                <div id="empty-active-msg" class="empty-msg hidden">
+                    <p>Listeniz boş. Ürün ekleyerek başlayın!</p>
+                </div>
+            </div>
+
+            <div id="history-tab" class="tab-content">
+                <div id="history-container">
+                    <!-- Geçmiş ürünler tarihe göre gruplanmış şekilde buraya -->
+                </div>
+                <div id="empty-history-msg" class="empty-msg hidden">
+                    <p>Henüz alınmış ürün yok.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bildirimler -->
+        <div id="toast" class="toast hidden"></div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>
