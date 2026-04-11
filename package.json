@@ -4,13 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node server.js",
-    "start": "node server.js",
-    "build": "echo 'No build step required for static HTML/CSS/JS'",
+    "dev": "npx -y serve . -l 3000",
+    "start": "npx -y serve . -l 3000",
+    "build": "mkdir -p dist && cp index.html style.css app.js dist/",
     "lint": "echo 'No linting step required'"
   },
-  "dependencies": {
-    "express": "^4.21.2"
-  },
+  "dependencies": {},
   "devDependencies": {}
 }

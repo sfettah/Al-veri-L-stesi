@@ -29,7 +29,7 @@
                 <div class="join-area">
                     <label for="join-code">Koda Göre Liste Aç</label>
                     <div class="input-group">
-                        <input type="number" id="join-code" placeholder="6 haneli kod" maxlength="6" pattern="\d{6}">
+                        <input type="text" id="join-code" placeholder="6 haneli kod" maxlength="6" inputmode="numeric" pattern="\d*" autocomplete="off">
                         <button id="btn-join" class="btn btn-secondary">Aç</button>
                     </div>
                 </div>
@@ -51,7 +51,7 @@
             </header>
             <div class="form-group">
                 <label for="new-list-name">Liste Adı (Opsiyonel)</label>
-                <input type="text" id="new-list-name" placeholder="Örn: Haftalık Market" maxlength="30">
+                <input type="text" id="new-list-name" placeholder="Örn: Haftalık Market" maxlength="30" autocomplete="off">
                 <button id="btn-submit-create" class="btn btn-primary btn-large">Oluştur</button>
             </div>
         </section>
@@ -62,7 +62,10 @@
                 <div class="header-top">
                     <button class="btn-back">←</button>
                     <h2 id="display-list-name">Yükleniyor...</h2>
-                    <button id="btn-share-list" class="btn-icon" title="Paylaş">📤</button>
+                    <button id="btn-share-list" class="btn-share" title="Paylaş">
+                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+                        Paylaş
+                    </button>
                 </div>
                 <div class="code-badge">
                     Kod: <span id="display-list-code">------</span>
@@ -78,15 +81,22 @@
             <div id="active-items-tab" class="tab-content active">
                 <div class="add-item-area">
                     <div class="input-row">
-                        <input type="text" id="item-name" placeholder="Ürün adı...">
-                        <input type="text" id="item-qty" placeholder="Miktar (opsiyonel)" class="qty-input">
-                        <button id="btn-add-item" class="btn btn-primary">Ekle</button>
+                        <input type="text" id="item-name" placeholder="Ürün adı..." autocomplete="off">
+                        <div class="input-row-inner">
+                            <input type="text" id="item-qty" placeholder="Miktar (opsiyonel)" class="qty-input">
+                            <button id="btn-add-item" class="btn btn-primary">Ekle</button>
+                        </div>
                     </div>
                 </div>
 
                 <ul id="active-items-list" class="item-list">
                     <!-- Aktif ürünler buraya -->
                 </ul>
+
+                <div id="selection-actions" class="selection-bar hidden">
+                    <span id="selection-count">0 ürün seçildi</span>
+                    <button id="btn-mark-purchased" class="btn btn-primary">Alındı Olarak İşaretle</button>
+                </div>
                 
                 <div id="empty-active-msg" class="empty-msg hidden">
                     <p>Listeniz boş. Ürün ekleyerek başlayın!</p>

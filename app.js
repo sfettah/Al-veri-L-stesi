@@ -34,6 +34,7 @@ const db = getFirestore(app);
 // --- DURUM YÖNETİMİ ---
 let currentListId = null;
 let unsubscribe = null;
+let selectedItems = new Set();
 
 // --- DOM ELEMENTLERİ ---
 const screens = {
@@ -70,7 +71,10 @@ const detailElements = {
     activeItemsList: document.getElementById('active-items-list'),
     historyContainer: document.getElementById('history-container'),
     emptyActiveMsg: document.getElementById('empty-active-msg'),
-    emptyHistoryMsg: document.getElementById('empty-history-msg')
+    emptyHistoryMsg: document.getElementById('empty-history-msg'),
+    selectionBar: document.getElementById('selection-actions'),
+    selectionCount: document.getElementById('selection-count'),
+    btnMarkPurchased: document.getElementById('btn-mark-purchased')
 };
 
 const toast = document.getElementById('toast');
@@ -94,6 +98,12 @@ function initApp() {
     detailElements.btnCopyCode.onclick = copyCode;
     detailElements.btnShareList.onclick = shareList;
     detailElements.btnAddItem.onclick = handleAddItem;
+    detailElements.btnMarkPurchased.onclick = handleMarkSelectedAsPurchased;
+
+    // Numeric only for join code
+    homeElements.joinCodeInput.oninput = (e) => {
+        e.target.value = e.target.value.replace(/[^0-9]/g, '');
+    };
 
     // Tab switching
     detailElements.tabBtns.forEach(btn => {
@@ -107,9 +117,15 @@ function initApp() {
     });
 
     // Enter key support
-    homeElements.joinCodeInput.onkeypress = (e) => e.key === 'Enter' && handleJoinList();
-    createElements.newListNameInput.onkeypress = (e) => e.key === 'Enter' && handleCreateList();
-    detailElements.itemNameInput.onkeypress = (e) => e.key === 'Enter' && handleAddItem();
+    homeElements.joinCodeInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleJoinList();
+    });
+    createElements.newListNameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleCreateList();
+    });
+    detailElements.itemNameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleAddItem();
+    });
 
     loadRecentLists();
 
@@ -126,11 +142,17 @@ function showScreen(screenId) {
     Object.values(screens).forEach(s => s.classList.remove('active'));
     screens[screenId].classList.add('active');
     
-    // Clear inputs
+    // Clear and focus inputs
     if (screenId === 'create') {
         createElements.newListNameInput.value = '';
+        setTimeout(() => createElements.newListNameInput.focus(), 100);
     }
-    if (screenId === 'home') homeElements.joinCodeInput.value = '';
+    if (screenId === 'home') {
+        homeElements.joinCodeInput.value = '';
+    }
+    if (screenId === 'detail') {
+        setTimeout(() => detailElements.itemNameInput.focus(), 100);
+    }
 }
 
 // --- LİSTE İŞLEMLERİ ---
@@ -142,8 +164,6 @@ async function handleCreateList() {
     // Eğer isim boşsa varsayılan isim ata
     if (!name) name = "Yeni Liste";
 
-    showToast('Liste oluşturuluyor...', 0);
-    
     try {
         const code = await generateUniqueCode();
         const listRef = doc(db, "lists", code);
@@ -194,6 +214,8 @@ async function handleJoinList() {
 // Detay Sayfasını Aç ve Dinle
 function openDetail(code) {
     currentListId = code;
+    selectedItems.clear();
+    updateSelectionUI();
     showScreen('detail');
     
     // URL'yi güncelle (sayfa yenilendiğinde kalması için)
@@ -226,16 +248,19 @@ function renderList(data, code) {
     detailElements.activeItemsList.innerHTML = '';
     if (data.activeItems.length === 0) {
         detailElements.emptyActiveMsg.classList.remove('hidden');
+        selectedItems.clear();
+        updateSelectionUI();
     } else {
         detailElements.emptyActiveMsg.classList.add('hidden');
         data.activeItems.sort((a, b) => b.addedAt - a.addedAt).forEach(item => {
+            const isSelected = selectedItems.has(item.id);
             const li = document.createElement('li');
             li.className = 'item-row';
             li.innerHTML = `
-                <div class="item-checkbox" onclick="markAsPurchased('${item.id}')">
+                <div class="item-checkbox ${isSelected ? 'checked' : ''}" onclick="toggleSelection('${item.id}')">
                     <span></span>
                 </div>
-                <div class="item-info">
+                <div class="item-info" onclick="toggleSelection('${item.id}')">
                     <div class="name">${item.name}</div>
                     ${item.quantity ? `<div class="qty">${item.quantity}</div>` : ''}
                 </div>
@@ -294,7 +319,7 @@ async function handleAddItem() {
     if (!name) return;
 
     const newItem = {
-        id: Date.now().toString(),
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
         name: name,
         quantity: qty,
         addedAt: Date.now()
@@ -312,28 +337,67 @@ async function handleAddItem() {
     }
 }
 
-window.markAsPurchased = async (itemId) => {
+window.toggleSelection = (itemId) => {
+    if (selectedItems.has(itemId)) {
+        selectedItems.delete(itemId);
+    } else {
+        selectedItems.add(itemId);
+    }
+    updateSelectionUI();
+    
+    // Re-render only checkboxes for performance if needed, but for small lists full render is fine
+    // For now, let's just update the specific checkbox class
+    const rows = detailElements.activeItemsList.querySelectorAll('.item-row');
+    rows.forEach(row => {
+        const checkbox = row.querySelector('.item-checkbox');
+        const id = checkbox.getAttribute('onclick').match(/'([^']+)'/)[1];
+        if (id === itemId) {
+            checkbox.classList.toggle('checked', selectedItems.has(itemId));
+        }
+    });
+};
+
+function updateSelectionUI() {
+    const count = selectedItems.size;
+    if (count > 0) {
+        detailElements.selectionBar.classList.remove('hidden');
+        detailElements.selectionCount.textContent = `${count} ürün seçildi`;
+    } else {
+        detailElements.selectionBar.classList.add('hidden');
+    }
+}
+
+async function handleMarkSelectedAsPurchased() {
+    if (selectedItems.size === 0) return;
+
+    showToast('İşleniyor...', 0);
     const listRef = doc(db, "lists", currentListId);
-    const snap = await getDoc(listRef);
-    const data = snap.data();
-    const item = data.activeItems.find(i => i.id === itemId);
-
-    if (!item) return;
-
-    const purchasedItem = {
-        ...item,
-        purchasedAt: Date.now()
-    };
-
+    
     try {
+        const snap = await getDoc(listRef);
+        const data = snap.data();
+        
+        const itemsToMove = data.activeItems.filter(i => selectedItems.has(i.id));
+        const remainingItems = data.activeItems.filter(i => !selectedItems.has(i.id));
+        
+        const purchasedItems = itemsToMove.map(item => ({
+            ...item,
+            purchasedAt: Date.now()
+        }));
+
         await updateDoc(listRef, {
-            activeItems: arrayRemove(item),
-            history: arrayUnion(purchasedItem)
+            activeItems: remainingItems,
+            history: arrayUnion(...purchasedItems)
         });
+        
+        selectedItems.clear();
+        updateSelectionUI();
+        showToast('Ürünler alındı olarak işaretlendi.');
     } catch (error) {
+        console.error(error);
         showToast('İşlem başarısız.');
     }
-};
+}
 
 window.deleteItem = async (itemId) => {
     const listRef = doc(db, "lists", currentListId);
